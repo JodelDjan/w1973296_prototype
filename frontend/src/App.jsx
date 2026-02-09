@@ -1,19 +1,20 @@
-import { useState, useEffect } from 'react'
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import Register from "./Register";
+import Login from "./Login";
+import Home from "./Home";
 
 
 function App() {
-  
-  useEffect(()=> {
-    console.log(import.meta.env.VITE_API_URL)
-  }, [])
-
-  
-
   return (
-    <>
-      
-    </>
-  )
+    <Router>
+      <Routes>
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/" element={<Home />} />
+      </Routes>
+    </Router>
+  );
 }
 
-export default App
+export default App;
+
