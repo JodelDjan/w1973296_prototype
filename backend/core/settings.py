@@ -43,9 +43,15 @@ INSTALLED_APPS = [
 
     'posts',
     'accounts',
-    'accounts.apps.AccountsConfig',
+    
    
 ]
+#JWT Auth
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
 
 CORS_ALLOWED_ORIGINS= ["http://localhost:5173"]
 CORS_ORIGIN_WHITELIST = [

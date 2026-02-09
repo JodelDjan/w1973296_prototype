@@ -75,14 +75,40 @@ export default function Register() {
     });
   }
 
-  function handleSubmit(e) {
-    e.preventDefault();
+async function handleSubmit(e) {
+  e.preventDefault();
 
-    // Later: send to Django backend
-    console.log("Registration submitted:", form);
+  const payload = {
+    first_name: form.firstName,
+    last_name: form.lastName,
+    email: form.email,
+    password: form.password,
+    role: form.role,
+    researchArea: form.researchArea,
+    bio: form.bio,
+    tags: form.tags,
+  };
 
-    navigate("/login");
+  try {
+    const res = await fetch("http://localhost:8000/api/accounts/register/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (res.ok) {
+      navigate("/login");
+    } else {
+      const data = await res.json();
+      console.error("Registration error:", data);
+      alert("Registration failed. Check console for details.");
+    }
+  } catch (err) {
+    console.error("Network error:", err);
+    alert("Network error. Try again later.");
   }
+}
+
 
   const isResearcher = form.role === "researcher";
 
@@ -235,5 +261,4 @@ export default function Register() {
         </button>
       </form>
     </div>
-  );
-}
+  );}
