@@ -42,7 +42,9 @@ INSTALLED_APPS = [
     'corsheaders',
 
     'posts',
-    'accounts'
+    'accounts',
+    'accounts.apps.AccountsConfig',
+   
 ]
 
 CORS_ALLOWED_ORIGINS= ["http://localhost:5173"]
@@ -50,7 +52,7 @@ CORS_ORIGIN_WHITELIST = [
      'http://localhost:3000'
 ]
 
-AUTH_USER_MODEL = 'accounts.User'
+
 
 
 MIDDLEWARE = [

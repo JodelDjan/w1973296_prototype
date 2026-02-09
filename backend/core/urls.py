@@ -28,7 +28,10 @@ post_router.register(r'posts', views.PostViewSet, basename='post')
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.api.urls')),
+    path('api/accounts/', include('accounts.urls')),
+
     #path('api/', include('router.urls')),
 ]
 
-# urlpatterns = post_router.urls 
+
+
