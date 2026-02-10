@@ -59,6 +59,10 @@ class RegisterSerializer(serializers.ModelSerializer):
         profile.save()
         return user
 
+def validate_email(self, value):
+    if User.objects.filter(email=value).exists():
+        raise serializers.ValidationError("Email already registered.")
+    return value
 
 
 class EmailLoginSerializer(TokenObtainPairSerializer):
