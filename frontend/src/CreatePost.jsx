@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 const TAG_OPTIONS = [
@@ -23,15 +23,45 @@ const TAG_OPTIONS = [
 export default function CreatePost() {
   const navigate = useNavigate();
 
+  const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({
     title: "",
     body: "",
     start_date: "",
     max_participants: "",
     tags: [],
+    state: "open", // default state
   });
 
   const [error, setError] = useState("");
+
+  // Protect route — only researchers can access
+  useEffect(() => {
+    async function checkRole() {
+      const token = localStorage.getItem("access");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
+
+      const res = await fetch("http://127.0.0.1:8000/api/accounts/me/", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.role !== "researcher") {
+          navigate("/");
+          return;
+        }
+        setLoading(false);
+      } else {
+        navigate("/login");
+      }
+    }
+
+    checkRole();
+  }, []);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -53,6 +83,19 @@ export default function CreatePost() {
     e.preventDefault();
     setError("");
 
+    // Validate tags
+    if (form.tags.length === 0) {
+      setError("Please select at least one tag.");
+      return;
+    }
+
+    // Validate start date
+    const today = new Date().toISOString().split("T")[0];
+    if (form.start_date < today) {
+      setError("Start date cannot be in the past.");
+      return;
+    }
+
     const token = localStorage.getItem("access");
 
     const res = await fetch("http://127.0.0.1:8000/api/posts/create/", {
@@ -65,12 +108,15 @@ export default function CreatePost() {
     });
 
     if (res.ok) {
+      alert("Post created successfully!");
       navigate("/");
     } else {
       const data = await res.json();
       setError(data.error || "Failed to create post");
     }
   }
+
+  if (loading) return <p>Loading...</p>;
 
   return (
     <div style={{ maxWidth: "600px", margin: "0 auto", padding: "1rem" }}>

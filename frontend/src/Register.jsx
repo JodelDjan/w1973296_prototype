@@ -23,49 +23,26 @@ const TAG_OPTIONS = [
 export default function Register() {
   const navigate = useNavigate();
 
-const [form, setForm] = useState({
-  firstName: "",
-  lastName: "",
-  email: "",
-  password: "",
-  role: "general",
-  researchArea: "",
-  bio: "",
-  tags: [],
-  ageRange: "",
-  interests: [],
-});
+  const [form, setForm] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    role: "general",
+    researchArea: "",
+    bio: "",
+    tags: [],
+    ageRange: "",
+    interests: [],
+  });
 
-
-  const [bioError, setBioError] = useState("");
+  const [error, setError] = useState("");
 
   function handleChange(e) {
-    const { name, value } = e.target;
-
-    if (name === "bio") {
-      if (value.length > 150) {
-        setBioError("Bio must be 150 characters or less.");
-        return;
-      } else {
-        setBioError("");
-      }
-    }
-
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm({ ...form, [e.target.name]: e.target.value });
   }
 
-  function handleRoleChange(e) {
-    const role = e.target.value;
-
-    setForm((prev) => ({
-      ...prev,
-      role,
-      ...(role !== "researcher"
-        ? { researchArea: "", bio: "", tags: [] }
-        : {}),
-    }));
-  }
-
+  // For researcher tags
   function toggleTag(tag) {
     setForm((prev) => {
       const selected = prev.tags.includes(tag);
@@ -78,22 +55,37 @@ const [form, setForm] = useState({
     });
   }
 
-async function handleSubmit(e) {
-  e.preventDefault();
+  // For general-user interests
+  function toggleInterest(tag) {
+    setForm((prev) => {
+      const selected = prev.interests.includes(tag);
+      return {
+        ...prev,
+        interests: selected
+          ? prev.interests.filter((t) => t !== tag)
+          : [...prev.interests, tag],
+      };
+    });
+  }
 
-  const payload = {
-    first_name: form.firstName,
-    last_name: form.lastName,
-    email: form.email,
-    password: form.password,
-    role: form.role,
-    researchArea: form.researchArea,
-    bio: form.bio,
-    tags: form.tags,
-  };
+  async function handleSubmit(e) {
+    e.preventDefault();
+    setError("");
 
-  try {
-    const res = await fetch("http://localhost:8000/api/accounts/register/", {
+    const payload = {
+      first_name: form.firstName,
+      last_name: form.lastName,
+      email: form.email,
+      password: form.password,
+      role: form.role,
+      researchArea: form.researchArea,
+      bio: form.bio,
+      tags: form.tags,
+      ageRange: form.ageRange,
+      interests: form.interests,
+    };
+
+    const res = await fetch("http://127.0.0.1:8000/api/accounts/register/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -103,25 +95,19 @@ async function handleSubmit(e) {
       navigate("/login");
     } else {
       const data = await res.json();
-      console.error("Registration error:", data);
-      alert("Registration failed. Check console for details.");
+      setError(data.error || "Registration failed");
     }
-  } catch (err) {
-    console.error("Network error:", err);
-    alert("Network error. Try again later.");
   }
-}
-
 
   const isResearcher = form.role === "researcher";
 
   return (
     <div style={{ maxWidth: "500px", margin: "0 auto", padding: "1rem" }}>
-      <h1>Register</h1>
+      <h1>Create an Account</h1>
 
       <form onSubmit={handleSubmit}>
         <label>
-          First name
+          First Name
           <input
             type="text"
             name="firstName"
@@ -132,7 +118,7 @@ async function handleSubmit(e) {
         </label>
 
         <label>
-          Last name
+          Last Name
           <input
             type="text"
             name="lastName"
@@ -164,75 +150,44 @@ async function handleSubmit(e) {
           />
         </label>
 
-        {/* Role selection */}
-        <div style={{ marginTop: "1rem" }}>
-          <span>Role: </span>
-
-          <label>
-            <input
-              type="radio"
-              name="role"
-              value="general"
-              checked={form.role === "general"}
-              onChange={handleRoleChange}
-            />
-            General user
-          </label>
-
-          <label style={{ marginLeft: "1rem" }}>
-            <input
-              type="radio"
-              name="role"
-              value="researcher"
-              checked={form.role === "researcher"}
-              onChange={handleRoleChange}
-            />
-            Researcher
-          </label>
-        </div>
+        <label>
+          Role
+          <select name="role" value={form.role} onChange={handleChange}>
+            <option value="general">General User</option>
+            <option value="researcher">Researcher</option>
+          </select>
+        </label>
 
         {/* Researcher-only fields */}
         {isResearcher && (
           <>
-            <label style={{ marginTop: "1rem" }}>
-              Research area
+            <label>
+              Research Area
               <input
                 type="text"
                 name="researchArea"
                 value={form.researchArea}
                 onChange={handleChange}
-                required={isResearcher}
+                required
               />
             </label>
 
-            <label style={{ marginTop: "1rem" }}>
-              Short bio (max 150 characters)
-              <textarea
+            <label>
+              Bio
+              <input
+                type="text"
                 name="bio"
                 value={form.bio}
                 onChange={handleChange}
-                rows={3}
-                required={isResearcher}
+                required
               />
             </label>
 
-            <div style={{ fontSize: "0.8rem" }}>
-              {form.bio.length}/150 characters
-            </div>
-
-            {bioError && (
-              <div style={{ color: "red", fontSize: "0.8rem" }}>
-                {bioError}
-              </div>
-            )}
-
             <div style={{ marginTop: "1rem" }}>
-              <div>Select your tags:</div>
-
+              <div>Select Tags (Researcher):</div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
                 {TAG_OPTIONS.map((tag) => {
                   const selected = form.tags.includes(tag);
-
                   return (
                     <button
                       key={tag}
@@ -258,40 +213,64 @@ async function handleSubmit(e) {
             </div>
           </>
         )}
-        
-        {form.role === "general" && (
-  <>
-    <label>
-      Age range
-      <select name="ageRange" value={form.ageRange} onChange={handleChange}>
-        <option value="">Select age range</option>
-        <option value="18-25">18–25</option>
-        <option value="26-35">26–35</option>
-        <option value="36-45">36–45</option>
-        <option value="46-55">46–55</option>
-        <option value="56-60">56–60</option>
-      </select>
-    </label>
 
-    <div style={{ marginTop: "1rem" }}>
-      <div>Select your interests:</div>
-      {TAG_OPTIONS.map(tag => (
-        <button
-          key={tag}
-          type="button"
-          onClick={() => toggleInterest(tag)}
-        >
-          {tag}
-        </button>
-      ))}
-    </div>
-  </>
-)}
+        {/* General-user-only fields */}
+        {!isResearcher && (
+          <>
+            <label>
+              Age Range
+              <select
+                name="ageRange"
+                value={form.ageRange}
+                onChange={handleChange}
+                required
+              >
+                <option value="">Select age range</option>
+                <option value="18-25">18–25</option>
+                <option value="26-35">26–35</option>
+                <option value="36-45">36–45</option>
+                <option value="46-55">46–55</option>
+                <option value="56-60">56–60</option>
+              </select>
+            </label>
 
+            <div style={{ marginTop: "1rem" }}>
+              <div>Select Interests:</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
+                {TAG_OPTIONS.map((tag) => {
+                  const selected = form.interests.includes(tag);
+                  return (
+                    <button
+                      key={tag}
+                      type="button"
+                      onClick={() => toggleInterest(tag)}
+                      style={{
+                        padding: "0.3rem 0.6rem",
+                        borderRadius: "999px",
+                        border: selected
+                          ? "1px solid #2563eb"
+                          : "1px solid #ccc",
+                        backgroundColor: selected ? "#2563eb" : "#f5f5f5",
+                        color: selected ? "white" : "black",
+                        cursor: "pointer",
+                        fontSize: "0.8rem",
+                      }}
+                    >
+                      {tag}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </>
+        )}
+
+        {error && <p style={{ color: "red" }}>{error}</p>}
 
         <button type="submit" style={{ marginTop: "1.5rem" }}>
-          Submit
+          Register
         </button>
       </form>
     </div>
-  );}
+  );
+}
