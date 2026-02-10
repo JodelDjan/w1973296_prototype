@@ -21,3 +21,17 @@ class ApplicationSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['user', 'post']
 
+class CreatePostSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Post
+        fields = [
+            'title', 'body', 'start_date', 'max_participants',
+            'tags', 'state'
+        ]
+
+    def validate(self, data):
+        if not data.get("tags"):
+            raise serializers.ValidationError("At least one tag is required.")
+        return data
+     
+
