@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from .models import Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+
 class RegisterSerializer(serializers.ModelSerializer):
     role = serializers.CharField(write_only=True)
 
@@ -24,6 +25,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {'password': {'write_only': True}}
 
+    # FIX: email uniqueness validation
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Email already registered.")
+        return value
+
     def create(self, validated_data):
         role = validated_data.pop('role')
 
@@ -36,6 +43,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         age_range = validated_data.pop('ageRange', '')
         interests = validated_data.pop('interests', [])
 
+        # Create user
         user = User.objects.create_user(
             username=validated_data['email'],
             email=validated_data['email'],
@@ -44,7 +52,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             password=validated_data['password']
         )
 
-        profile = user.profile
+        # FIX: ensure profile exists
+        profile, created = Profile.objects.get_or_create(user=user)
         profile.role = role
 
         if role == "researcher":
@@ -59,44 +68,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         profile.save()
         return user
 
-def validate_email(self, value):
-    if User.objects.filter(email=value).exists():
-        raise serializers.ValidationError("Email already registered.")
-    return value
 
+#login serializer
 
 class EmailLoginSerializer(TokenObtainPairSerializer):
     username_field = 'email'
-
-    class Meta:
-        model = User
-        fields = ['first_name', 'last_name', 'email', 'password',
-                  'role', 'researchArea', 'bio', 'tags']
-        extra_kwargs = {
-            'password': {'write_only': True}
-        }
-
-    def create(self, validated_data):
-        role = validated_data.pop('role')
-        research_area = validated_data.pop('researchArea', '')
-        bio = validated_data.pop('bio', '')
-        tags = validated_data.pop('tags', [])
-
-        # Create the user
-        user = User.objects.create_user(
-            username=validated_data['email'],  # using email as username
-            email=validated_data['email'],
-            first_name=validated_data['first_name'],
-            last_name=validated_data['last_name'],
-            password=validated_data['password']
-        )
-
-        # Update profile
-        profile = user.profile
-        profile.role = role
-        profile.research_area = research_area
-        profile.bio = bio
-        profile.tags = tags
-        profile.save()
-
-        return user

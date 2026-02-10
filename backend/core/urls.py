@@ -24,9 +24,6 @@ from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-
-
-
 post_router = DefaultRouter()
 post_router.register(r'posts', views.PostViewSet, basename='post')
 
