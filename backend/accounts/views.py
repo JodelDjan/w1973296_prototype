@@ -5,6 +5,9 @@ from rest_framework import status
 from .serializers import RegisterSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import EmailLoginSerializer
+from rest_framework.permissions import IsAuthenticated
+
+
 
 class RegisterView(APIView):
     def post(self, request):
@@ -17,3 +20,15 @@ class RegisterView(APIView):
 
 class EmailLoginView(TokenObtainPairView):
     serializer_class = EmailLoginSerializer
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        profile = request.user.profile
+        return Response({
+            "email": request.user.email,
+            "first_name": request.user.first_name,
+            "last_name": request.user.last_name,
+            "role": profile.role,
+        })
