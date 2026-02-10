@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Profile
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 class RegisterSerializer(serializers.ModelSerializer):
     # extra fields from Profile
@@ -8,6 +9,10 @@ class RegisterSerializer(serializers.ModelSerializer):
     researchArea = serializers.CharField(write_only=True, required=False, allow_blank=True)
     bio = serializers.CharField(write_only=True, required=False, allow_blank=True)
     tags = serializers.ListField(write_only=True, required=False)
+
+
+class EmailLoginSerializer(TokenObtainPairSerializer):
+    username_field = 'email'
 
     class Meta:
         model = User
