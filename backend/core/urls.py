@@ -19,6 +19,11 @@ from django.urls import path, include
 #from rest_framework import routers
 from posts.api import views
 from rest_framework.routers import DefaultRouter
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
+
 
 
 
@@ -29,8 +34,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('core.api.urls')),
     path('api/accounts/', include('accounts.urls')),
-
-    #path('api/', include('router.urls')),
+    path('api/accounts/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/accounts/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
 
