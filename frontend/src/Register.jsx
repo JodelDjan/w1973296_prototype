@@ -23,16 +23,19 @@ const TAG_OPTIONS = [
 export default function Register() {
   const navigate = useNavigate();
 
-  const [form, setForm] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    password: "",
-    role: "general",
-    researchArea: "",
-    bio: "",
-    tags: [],
-  });
+const [form, setForm] = useState({
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  role: "general",
+  researchArea: "",
+  bio: "",
+  tags: [],
+  ageRange: "",
+  interests: [],
+});
+
 
   const [bioError, setBioError] = useState("");
 
@@ -255,6 +258,36 @@ async function handleSubmit(e) {
             </div>
           </>
         )}
+        
+        {form.role === "general" && (
+  <>
+    <label>
+      Age range
+      <select name="ageRange" value={form.ageRange} onChange={handleChange}>
+        <option value="">Select age range</option>
+        <option value="18-25">18–25</option>
+        <option value="26-35">26–35</option>
+        <option value="36-45">36–45</option>
+        <option value="46-55">46–55</option>
+        <option value="56-60">56–60</option>
+      </select>
+    </label>
+
+    <div style={{ marginTop: "1rem" }}>
+      <div>Select your interests:</div>
+      {TAG_OPTIONS.map(tag => (
+        <button
+          key={tag}
+          type="button"
+          onClick={() => toggleInterest(tag)}
+        >
+          {tag}
+        </button>
+      ))}
+    </div>
+  </>
+)}
+
 
         <button type="submit" style={{ marginTop: "1.5rem" }}>
           Submit
