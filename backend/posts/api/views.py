@@ -64,3 +64,4 @@ class ApplyToPostView(generics.CreateAPIView):
             user=self.request.user,
             post=post
         )
+
