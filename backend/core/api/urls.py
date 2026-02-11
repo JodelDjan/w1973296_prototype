@@ -7,5 +7,6 @@ router = DefaultRouter()
 router.registry.extend(post_router.registry)
 
 urlpatterns = [
-    path('', include(router.urls))
+    path('posts/', include('posts.api.urls')),
+    path('', include(router.urls)),
 ]

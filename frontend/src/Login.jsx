@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiRequest, getAuthHeaders, APIError } from "./utils/api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -10,45 +11,58 @@ export default function Login() {
   });
 
   const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
+    // Clear error when user starts typing
+    if (error) setError("");
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/accounts/login/", {
+      // Login request
+      const data = await apiRequest("/accounts/login/", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          email: form.email,
+          password: form.password,
+        }),
       });
 
-      const data = await res.json();
+      // Save tokens
+      localStorage.setItem("access", data.access);
+      localStorage.setItem("refresh", data.refresh);
 
-      if (res.ok) {
-        // Save JWT tokens
-        localStorage.setItem("access", data.access);
-        localStorage.setItem("refresh", data.refresh);
+      // Get user role
+      const userRole = await apiRequest("/accounts/me/", {
+        headers: getAuthHeaders(),
+      });
 
-        // Redirect based on role
-        const userRole = await fetch("http://127.0.0.1:8000/api/accounts/me/", {
-          headers: { Authorization: `Bearer ${data.access}` },
-        }).then((r) => r.json());
+      // Navigate based on role
+      if (userRole.role === "researcher") {
+        navigate("/");
+      }
 
-        if (userRole.role === "researcher") {
-          navigate("/researcher-dashboard");
+    } catch (err) {
+      if (err instanceof APIError) {
+        if (err.status === 0) {
+          setError("Cannot connect to server. Is Django running on port 8000?");
+        } else if (err.status === 401) {
+          setError("Invalid email or password");
         } else {
-          navigate("/");
+          setError(err.message || "An error occurred during login");
         }
       } else {
-        setError("Invalid email or password");
+        setError("An unexpected error occurred");
       }
-    } catch (err) {
-      console.error(err);
-      setError("Network error");
+      console.error("Login error:", err);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -65,6 +79,7 @@ export default function Login() {
             value={form.email}
             onChange={handleChange}
             required
+            disabled={isLoading}
           />
         </label>
 
@@ -76,13 +91,22 @@ export default function Login() {
             value={form.password}
             onChange={handleChange}
             required
+            disabled={isLoading}
           />
         </label>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && (
+          <p style={{ color: "red", padding: "0.5rem", backgroundColor: "#ffe6e6", borderRadius: "4px" }}>
+            {error}
+          </p>
+        )}
 
-        <button type="submit" style={{ marginTop: "1rem" }}>
-          Login
+        <button 
+          type="submit" 
+          style={{ marginTop: "1rem" }}
+          disabled={isLoading}
+        >
+          {isLoading ? "Logging in..." : "Login"}
         </button>
       </form>
     </div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiRequest, getAuthHeaders, APIError } from "./utils/api";
 
 export default function Home() {
   const navigate = useNavigate();
@@ -7,27 +8,27 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [posts, setPosts] = useState([]);
   const [researchers, setResearchers] = useState([]);
+  const [error, setError] = useState("");
 
   // Fetch logged-in user
   useEffect(() => {
     async function fetchUser() {
-      const token = localStorage.getItem("access");
-      if (!token) {
-        navigate("/login");
-        return;
-      }
+  const token = localStorage.getItem("access");
+  if (!token) {
+    navigate("/login");
+    return;
+  }
 
-      const res = await fetch("http://127.0.0.1:8000/api/accounts/me/", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setUser(data);
-      } else {
-        navigate("/login");
-      }
-    }
+  try {
+    const data = await apiRequest("/accounts/me/", {
+      headers: getAuthHeaders(),
+    });
+    setUser(data);
+  } catch (err) {
+    console.error("Failed to fetch user:", err);
+    navigate("/login");
+  }
+}
 
     fetchUser();
   }, []);
@@ -35,12 +36,13 @@ export default function Home() {
   // Fetch posts
   useEffect(() => {
     async function fetchPosts() {
-      const res = await fetch("http://127.0.0.1:8000/api/posts/feed/");
-      const data = await res.json();
+      const data = await apiRequest("/posts/feed/");
       setPosts(data);
     }
     fetchPosts();
   }, []);
+
+
 
   // Fetch researcher directory
   useEffect(() => {
@@ -54,23 +56,22 @@ export default function Home() {
 
   // Close post
   async function closePost(postId) {
-    const token = localStorage.getItem("access");
+  if (!confirm("Are you sure you want to close this post?")) return;
 
-    const res = await fetch(`http://127.0.0.1:8000/api/posts/close/${postId}/`, {
+  try {
+    await apiRequest(`/posts/close/${postId}/`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
+      headers: getAuthHeaders(),
     });
-
-    if (res.ok) {
-      alert("Post closed");
-      window.location.reload();
-    } else {
-      alert("Failed to close post");
+    
+    alert("Post closed successfully");
+    window.location.reload();
+  } catch (err) {
+    if (err instanceof APIError) {
+      alert(err.message || "Failed to close post");
     }
   }
+}
 
   if (!user) return <p>Loading...</p>;
 

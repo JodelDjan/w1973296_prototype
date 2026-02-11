@@ -2,7 +2,10 @@ from rest_framework.permissions import BasePermission
 
 class IsGeneralUser(BasePermission):
     def has_permission(self, request, view):
-        return (
-            request.user.is_authenticated
-            and request.user.role == 'general'
-        )
+        if not request.user.is_authenticated:
+            return False
+        
+        try:
+            return request.user.profile.role == 'general'
+        except AttributeError:
+            return False

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { apiRequest, APIError } from "./utils/api";
 
 const TAG_OPTIONS = [
   "Health & Fitness",
@@ -20,8 +21,11 @@ const TAG_OPTIONS = [
   "Environmental Health",
 ];
 
+
 export default function Register() {
   const navigate = useNavigate();
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);  // ADD THIS
 
   const [form, setForm] = useState({
     firstName: "",
@@ -36,41 +40,39 @@ export default function Register() {
     interests: [],
   });
 
-  const [error, setError] = useState("");
-
   function handleChange(e) {
     setForm({ ...form, [e.target.name]: e.target.value });
+    if (error) setError("");  // Clear error on input
   }
 
-  // For researcher tags
-  function toggleTag(tag) {
-    setForm((prev) => {
-      const selected = prev.tags.includes(tag);
-      return {
-        ...prev,
-        tags: selected
-          ? prev.tags.filter((t) => t !== tag)
-          : [...prev.tags, tag],
-      };
-    });
-  }
+function toggleTag(tag) {
+  setForm((prev) => {
+    const selected = prev.tags.includes(tag);
+    return {
+      ...prev,
+      tags: selected
+        ? prev.tags.filter((t) => t !== tag)
+        : [...prev.tags, tag],
+    };
+  });
+}
 
-  // For general-user interests
-  function toggleInterest(tag) {
-    setForm((prev) => {
-      const selected = prev.interests.includes(tag);
-      return {
-        ...prev,
-        interests: selected
-          ? prev.interests.filter((t) => t !== tag)
-          : [...prev.interests, tag],
-      };
-    });
-  }
+function toggleInterest(tag) {
+  setForm((prev) => {
+    const selected = prev.interests.includes(tag);
+    return {
+      ...prev,
+      interests: selected
+        ? prev.interests.filter((t) => t !== tag)
+        : [...prev.interests, tag],
+    };
+  });
+}
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
+    setIsLoading(true);
 
     const payload = {
       first_name: form.firstName,
@@ -85,19 +87,32 @@ export default function Register() {
       interests: form.interests,
     };
 
-    const res = await fetch("http://127.0.0.1:8000/api/accounts/register/", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (res.ok) {
+    try {
+      await apiRequest("/accounts/register/", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      });
       navigate("/login");
-    } else {
-      const data = await res.json();
-      setError(data.error || "Registration failed");
+    } catch (err) {
+      if (err instanceof APIError) {
+        if (err.status === 0) {
+          setError("Cannot connect to server. Is Django running?");
+        } else if (err.details && err.details.email) {
+          setError(err.details.email[0]); // Email validation error
+        } else {
+          setError(err.message || "Registration failed");
+        }
+      } else {
+        setError("An unexpected error occurred");
+      }
+      console.error("Registration error:", err);
+    } finally {
+      setIsLoading(false);
     }
   }
+
+  // add disabled={isLoading} to form inputs and button
+
 
   const isResearcher = form.role === "researcher";
 

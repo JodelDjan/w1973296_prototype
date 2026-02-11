@@ -2,7 +2,44 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models import Profile
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth import authenticate
 
+
+#Login serializer
+class EmailLoginSerializer(TokenObtainPairSerializer):
+    email = serializers.EmailField(write_only=True)
+    password = serializers.CharField(write_only=True)
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Remove the username field from serializer
+        if 'username' in self.fields:
+            del self.fields['username']
+    
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+        
+        # Try to find user by email
+        try:
+            user = User.objects.get(email=email)
+            username = user.username
+        except User.DoesNotExist:
+            raise serializers.ValidationError('Invalid email or password')
+        
+        # Authenticate with username
+        user = authenticate(username=username, password=password)
+        
+        if user is None:
+            raise serializers.ValidationError('Invalid email or password')
+        
+        # Generate tokens
+        refresh = self.get_token(user)
+        
+        return {
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
+        }
 
 class RegisterSerializer(serializers.ModelSerializer):
     role = serializers.CharField(write_only=True)
@@ -69,7 +106,3 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-#login serializer
-
-class EmailLoginSerializer(TokenObtainPairSerializer):
-    username_field = 'email'

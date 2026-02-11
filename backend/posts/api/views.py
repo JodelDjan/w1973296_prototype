@@ -65,3 +65,28 @@ class ApplyToPostView(generics.CreateAPIView):
             post=post
         )
 
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from django.contrib.auth.models import User
+
+@api_view(['GET'])
+def post_feed(request):
+    """Return all posts with author info"""
+    posts = Post.objects.all().order_by('-created_at')
+    data = []
+    
+    for post in posts:
+        data.append({
+            'id': post.id,
+            'title': post.title,
+            'body': post.body,
+            'start_date': post.start_date,
+            'max_participants': post.max_participants,
+            'tags': post.tags,
+            'state': post.state,
+            'created_at': post.created_at,
+            'author_id': post.author.id,
+            'author_name': f"{post.author.first_name} {post.author.last_name}",
+        })
+    
+    return Response(data)
