@@ -1,4 +1,5 @@
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api").replace(/\/$/, '');
+const API_BASE_URL = (import.meta.env.VITE_API_URL ||"https://w1973296-prototype.onrender.com/api"
+).replace(/\/$/, '');
 
 export class APIError extends Error {
   constructor(message, status, details = {}) {
@@ -12,7 +13,7 @@ export class APIError extends Error {
 export async function apiRequest(endpoint, options = {}) {
   const url = `${API_BASE_URL}${endpoint}`;
   console.log("API Request URL:", url);
-  
+
   const config = {
     ...options,
     headers: {
